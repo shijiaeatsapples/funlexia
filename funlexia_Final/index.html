@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Funlexia! </title>
+<style>
+  
+  @import url('https://fonts.cdnfonts.com/css/opendyslexic');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --peach: #FFDAB9;
+    --light-blue: #B5D8F7;
+    --mint: #B8F0D8;
+    --soft-pink: #FFD1DC;
+    --lavender: #E6D5F5;
+    --lavender-dark: #C39BD3;
+    --warm-yellow: #FFF3B0;
+    --pink: #FF8A80;
+    --text-dark: #415b72;
+    --bg: #FFF8F0;
+    --tile-shadow: 0 6px 20px rgba(0,0,0,0.12);
+    --radius: 20px;
+  }
+
+  body {
+    font-family: 'Comic Sans MS', 'OpenDyslexic', 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text-dark);
+    min-height: 100vh;
+    overflow-x: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* logs */
+  .screen { display: none; width: 100%; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; align-items: center; }
+
+  /* loading scr */
+  #loading-screen {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    min-height: 100vh;
+    justify-content: flex-end;
+    align-items: center;
+    background: var(--peach);
+    overflow: hidden;
+  }
+  .loading-bg-image {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    animation: loadImgIn 0.7s ease-out forwards, loadImgBreath 3.5s ease-in-out 0.7s infinite;
+    transform-origin: center center;
+  }
+  @keyframes loadImgIn {
+    from { opacity: 0; transform: scale(1.1); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  @keyframes loadImgBreath {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.05); }
+  }
+  .loading-flowers {
+    position: absolute;
+    bottom: 300px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+  .loading-flower-slot {
+    width: 90px;
+    height: 90px;
+    opacity: 0;
+    transform: scale(0) rotate(-20deg);
+    transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .loading-flower-slot.visible {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  .loading-flower-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .loading-text {
+    position: absolute;
+    bottom: 250px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1;
+    font-size: 30px;
+    font-weight: bold;
+    color: rgb(73, 92, 102);
+    text-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    letter-spacing: 2px;
+    white-space: nowrap;
+  }
+  .loading-text .dot {
+    opacity: 0;
+    animation: dotBlink 1.2s infinite;
+  }
+  .loading-text .dot:nth-child(2) { animation-delay: 0.2s; }
+  .loading-text .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotBlink {
+    0%, 80%, 100% { opacity: 0; }
+    40%           { opacity: 1; }
+  }
+
+  /* transition1 */
+  #loading-screen.pulling-down {
+    animation: loadingPullDown 1s ease-in forwards;
+    pointer-events: none;
+  }
+  @keyframes loadingPullDown {
+    0%   { transform: translateY(0);     }
+    50%  { transform: translateY(100%);  }
+    65%  { transform: translateY(80%);   }
+    80%  { transform: translateY(100%);  }
+    90%  { transform: translateY(92%);   }
+    100% { transform: translateY(100%);  }
+  }
+  #home-screen.entering {
+    animation: homeSlideIn 0.45s ease-out forwards;
+  }
+  @keyframes homeSlideIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* home scr */
+  #home-screen {
+    padding: 0;
+    gap: 10px;
+    justify-content: flex-start;
+  }
+  .home-banner {
+    display: block;
+    width: auto;
+    height: 120px;
+    object-fit: contain;
+  }
+  #home-screen .top-bar,
+  #home-screen .word-area {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  /* Top bar */
+  .top-bar {
+    width: 100%;
+    max-width: 700px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+  }
+  .progress-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 18px;
+    background: white;
+    padding: 8px 18px;
+    border-radius: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  .flower-btn {
+    background: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 30px;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: transform 0.2s;
+  }
+  .flower-btn:hover { transform: scale(1.05); }
+  .flower-btn:active { transform: scale(0.5); }
+
+  /* letter tile box */
+  .word-area {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 48px;
+    flex: 1;
+    width: 100%;
+    padding: 20px;
+  }
+  .word-left {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .word-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  /* letter tile */
+  .tiles-container {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .letter-tile {
+    width: 150px;
+    height: 190px;
+    background: white;
+    border: 4px solid var(--light-blue);
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 52px;
+    font-weight: bold;
+    color: var(--text-dark);
+    cursor: pointer;
+    box-shadow: var(--tile-shadow);
+    transition: all 0.25s ease;
+    position: relative;
+  }
+  .letter-tile:hover {
+    transform: translateY(-6px) scale(1.05);
+    border-color: var(--soft-pink);
+  }
+  .letter-tile:active {
+    transform: translateY(0) scale(0.97);
+  }
+  .letter-tile.selected {
+    background: var(--warm-yellow);
+    border-color: #FFD700;
+    transform: translateY(-4px);
+  }
+  .letter-tile.played {
+    background: var(--mint);
+    border-color: #66BB6A;
+  }
+  .letter-tile .tile-number {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font-size: 14px;
+    color: #bbb;
+  }
+
+  /* illustration */
+  .illustration-area {
+    width: 500px;
+    height: 500px;
+    background: white;
+    border-radius: 30px;
+    display: flex;
+    bottom: 500px;
+    justify-content: center;
+    box-shadow: var(--tile-shadow);
+    overflow: hidden;
+  }
+
+  .illustration-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 30px;
+  }
+
+  /* action btn */
+  .actions {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 6px;
+  }
+  .action-btn {
+    padding: 0;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    box-shadow: none;
+  }
+  .action-btn:hover { transform: scale(1.3); }
+  .action-btn:active { transform: scale(0.94); }
+  .action-btn img {
+    width: 110px;
+    height: 110px;
+    object-fit: contain;
+    display: block;
+  }
+  .btn-mic.listening img {
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(79, 184, 237, 0.5); }
+    50% { box-shadow: 0 0 0 16px rgba(255,82,82,0); }
+  }
+
+  /* status msg */
+  .feedback {
+    font-size: 26px;
+    font-weight: bold;
+    min-height: 44px;
+    text-align: center;
+    transition: all 0.3s;
+    color: var(--text-dark);
+  }
+
+  /* canvas */
+  #reward-screen {
+    justify-content: center;
+    gap: 16px;
+    padding: 24px 20px;
+    background: url('images/bg-reward.png') center/cover no-repeat;
+  }
+  .reward-title {
+    font-size: 28px;
+    color: var(--text-dark);
+    text-align: center;
+  }
+  .draw-word-label {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--text-dark);
+    background: white;
+    padding: 8px 28px;
+    border-radius: 30px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+  .reward-draw-area {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .draw-reference {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  .draw-reference-img {
+    width: 280px;
+    height: 280px;
+    object-fit: contain;
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--tile-shadow);
+    padding: 10px;
+  }
+  .draw-reference-label {
+    font-size: 13px;
+    color: #888;
+  }
+
+  
+  .canvas-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+  .canvas-main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  #draw-canvas {
+    width: 400px;
+    height: 400px;
+    border: 3px solid var(--light-blue);
+    border-radius: 14px;
+    cursor: crosshair;
+    touch-action: none;
+  }
+  .canvas-tools {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .color-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid white;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    transition: transform 0.2s;
+  }
+  .color-btn:hover { transform: scale(1.2); }
+  .color-btn.active { border-color: var(--text-dark); transform: scale(1.15); }
+  .tool-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+    background: #eee;
+    transition: all 0.2s;
+  }
+  .tool-btn:hover { background: #ddd; }
+
+  .save-drawing-btn {
+    padding: 16px 40px;
+    background: var(--lavender);
+    color: var(--text-dark);
+    border: none;
+    border-radius: 40px;
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    transition: all 0.2s;
+  }
+  .save-drawing-btn:hover { transform: translateY(-3px); background: var(--lavender-dark); }
+
+  /* inventory */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 30px;
+    padding: 30px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .modal-title { font-size: 24px; }
+  .modal-close {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: #eee;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .inventory-gallery {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .inventory-item {
+    background: var(--bg);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .gallery-item-canvas {
+    aspect-ratio: 1;
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .gallery-item-canvas img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    display: block;
+  }
+  .gallery-item-label {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .empty-inventory {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 40px 20px;
+    color: #aaa;
+    font-size: 16px;
+  }
+
+  /* woohoo screen */
+  #complete-screen {
+    justify-content: center;
+    gap: 20px;
+    padding: 30px;
+    background: url('images/background.png') center/cover no-repeat;
+  }
+  .complete-banner {
+    max-width: 340px;
+    max-height: 180px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 20px;
+    box-shadow: var(--tile-shadow);
+  }
+  .complete-title {
+    font-size: 40px;
+    text-align: center;
+    color: var(--text-dark);
+  }
+  .complete-drawing-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .complete-drawing-img {
+    width: 240px;
+    height: 240px;
+    object-fit: contain;
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--tile-shadow);
+  }
+  .complete-side-img {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    background: white;
+    border-radius: 14px;
+    box-shadow: var(--tile-shadow);
+  }
+  .restart-btn {
+    padding: 16px 40px;
+    background: var(--lavender);
+    color: var(--text-dark);
+    border: none;
+    border-radius: 40px;
+    font-family: inherit;
+    font-size: 22px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    transition: all 0.2s;
+  }
+  .restart-btn:hover { transform: translateY(-3px); background: var(--lavender-dark); }
+  
+
+  /* mute btn */
+  #mute-btn {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 200;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.2s;
+  }
+  #mute-btn:hover { transform: scale(1.15); }
+  #mute-btn:active { transform: scale(0.9); }
+  #mute-btn img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    display: block;
+  }
+
+  /* responsive */
+  @media (max-width: 500px) {
+    .letter-tile { width: 75px; height: 90px; font-size: 38px; }
+    .tiles-container { gap: 10px; }
+    .illustration-area { width: 160px; height: 160px; }
+    .action-btn { font-size: 16px; padding: 12px 22px; }
+    .reward-title { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<audio id="bg-music" src="sound/background-music.mp3" loop preload="auto"></audio>
+<button id="mute-btn" onclick="toggleMute()" aria-label="Toggle sound">
+  <img id="mute-icon" src="images/btn-sound-on.png" alt="Sound on">
+</button>
+<audio id="correct-sound" src="sound/correct.mp3" preload="auto"></audio>
+<audio id="tryagain-sound" src="sound/wrong.mp3" preload="auto"></audio>
+
+<!-- loading -->
+<div id="loading-screen" class="screen active">
+  
+  <img src="images/loading.png" alt="funlexia loading page" class="loading-bg-image">
+  <div class="loading-flowers" id="loading-flowers"></div>
+  <div class="loading-text">loading<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+</div>
+
+<!-- home -->
+<div id="home-screen" class="screen">
+  <img src="images/funlexia-banner.png" alt="Funlexia!" class="home-banner">
+  <div class="top-bar">
+    <div class="progress-display">
+       <span id="words-left">5</span> more words!
+    </div>
+    <button class="flower-btn" id="btn-open-inventory">
+      <span id="drawing-count">0</span> drawings
+    </button>
+  </div>
+
+  <div class="word-area">
+    <div class="word-left">
+      <div class="illustration-area" id="illustration"></div>
+    </div>
+
+    <div class="word-right">
+      <div class="tiles-container" id="tiles-container"></div>
+      <div class="feedback" id="feedback"></div>
+      <div class="actions">
+        <button class="action-btn btn-listen" onclick="playFullWord()">
+          <img src="images/btn-listen.png" alt="listen">
+        </button>
+        <button class="action-btn btn-mic" id="mic-btn" onclick="startListening()">
+          <img src="images/btn-mic.png" alt="say">
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- canvas scr -->
+<div id="reward-screen" class="screen">
+  <img src="images/funlexia-banner.png" alt="Funlexia!" class="home-banner">
+  <div class="reward-title">Let's draw!</div>
+  <div class="draw-word-label" id="draw-word-label">WORD</div>
+
+  <div class="reward-draw-area">
+    <div class="canvas-container">
+      <div class="canvas-main">
+        <canvas id="draw-canvas" width="280" height="280"></canvas>
+        <div class="canvas-tools">
+          <button class="color-btn active" style="background:#ffa8a8" onclick="setColor('#ffa8a8', this)"></button>
+          <button class="color-btn" style="background:#ffea96" onclick="setColor('#ffea96', this)"></button>
+          <button class="color-btn" style="background:#a8eab1" onclick="setColor('#a8eab1', this)"></button>
+          <button class="color-btn" style="background:#a5d4ff" onclick="setColor('#a5d4ff', this)"></button>
+          <button class="color-btn" style="background:#bca2ef" onclick="setColor('#bca2ef', this)"></button>
+          <button class="color-btn" style="background:#ffb88b" onclick="setColor('#ffb88b', this)"></button>
+          <div style="display:flex; gap:8px; justify-content:center; width:100%;">
+            <button class="tool-btn" onclick="setBrushSize(4)">Small!</button>
+            <button class="tool-btn" onclick="setBrushSize(10)">Medium!</button>
+            <button class="tool-btn" onclick="setBrushSize(20)">Thick!</button>
+            <button class="tool-btn" id="eraser-btn" onclick="toggleEraser(this)">Eraser</button>
+            <button class="tool-btn" onclick="clearCanvas()">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="draw-reference">
+        <img id="draw-reference-img" src="" alt="" class="draw-reference-img">
+        <div class="draw-reference-label">Reference</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="save-drawing-btn" onclick="saveDrawing()">Save!</button>
+</div>
+
+<!-- rewards -->
+<div id="complete-screen" class="screen">
+  <img src="images/complete-banner.png" alt="" class="complete-banner">
+  <div class="complete-title">Woohoo! You got a drawing! </div>
+  <div class="complete-drawing-row">
+    <img id="complete-drawing-img" src="" alt="Your drawing" class="complete-drawing-img">
+  </div>
+  <button class="restart-btn" onclick="restartGame()">Play!</button>
+  <button class="flower-btn" id="btn-open-inventory-complete" style="font-size:18px; padding:14px 24px;">
+    View Drawings!
+  </button>
+</div>
+
+<!--  inventory -->
+<div class="modal-overlay" id="inventory-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Drawings!</div>
+      <button class="modal-close" onclick="closeInventory()">✕</button>
+    </div>
+    <div class="inventory-gallery" id="inventory-gallery"></div>
+  </div>
+</div>
+
+<script>
+
+let isMuted = false;
+function toggleMute() {
+  isMuted = !isMuted;
+  bgMusic.muted = isMuted;
+  document.getElementById('mute-icon').src = isMuted ? 'images/btn-sound-off.png' : 'images/btn-sound-on.png';
+  document.getElementById('mute-icon').alt = isMuted ? 'Sound off' : 'Sound on';
+}
+
+const ROUND_SIZE = 5;
+const bgMusic = document.getElementById('bg-music');
+bgMusic.volume = 0.047;
+bgMusic.play().catch(() => {
+  document.addEventListener('click', () => {
+    if (bgMusic.paused) bgMusic.play();
+  }, { once: true });
+});
+
+const WORDS = [
+  //first round 
+  { word: 'cat', image: 'images/illustration/cat.png' },
+  { word: 'man', image: 'images/illustration/man.png' },
+  { word: 'hat', image: 'images/illustration/hat.png' },
+  { word: 'bag', image: 'images/illustration/bag.png' },
+  { word: 'tap', image: 'images/illustration/tap.png' },
+  // second round 
+  { word: 'mop', image: 'images/illustration/mop.png' },
+  { word: 'mat', image: 'images/illustration/mat.png' },
+  { word: 'pot', image: 'images/illustration/pot.png' },
+  { word: 'top', image: 'images/illustration/top.png' },
+  { word: 'cot', image: 'images/illustration/cot.png' },
+  // third round 
+  { word: 'map', image: 'images/illustration/map.png' },
+  { word: 'sun', image: 'images/illustration/sun.png' },
+  { word: 'cup', image: 'images/illustration/cup.png' },
+  { word: 'bat', image: 'images/illustration/bat.png' },
+  { word: 'bag', image: 'images/illustration/bag.png' },
+    // fourth round 
+  { word: 'fox', image: 'images/illustration/fox.png' },
+  { word: 'tub', image: 'images/illustration/tub.png' },
+  { word: 'hug', image: 'images/illustration/hug.png' },
+  { word: 'bed', image: 'images/illustration/bed.png' },
+  { word: 'pig', image: 'images/illustration/pig.png' },
+    // fifth round 
+  { word: 'bus', image: 'images/illustration/bus.png' },
+  { word: 'nut', image: 'images/illustration/nut.png' },
+  { word: 'web', image: 'images/illustration/web.png' },
+  { word: 'hen', image: 'images/illustration/hen.png' },
+  { word: 'pin', image: 'images/illustration/pin.png' },
+    // sixth round 
+  { word: 'pen', image: 'images/illustration/pen.png' },
+  { word: 'sun', image: 'images/illustration/sun.png' },
+  { word: 'lid', image: 'images/illustration/lid.png' },
+  { word: 'van', image: 'images/illustration/van.png' },
+  { word: 'box', image: 'images/illustration/box.png' },
+];
+
+// change to kayle's audio files when ready
+const PHONICS = {
+  a: 'eh', b: 'be', c: 'keh', d: 'duh', e: 'eh',
+  f: 'fuh', g: 'gur', h: 'her', i: 'ih', j: 'juh',
+  k: 'kuh', l: 'luh', m: 'muh', n: 'neh', o: 'oh',
+  p: 'pu', q: 'kwuh', r: 'ruh', s: 'suh', t: 'teh',
+  u: 'uh', v: 'vuh', w: 'wuh', x: 'ks', y: 'yuh', z: 'zuh'
+};
+
+
+let currentWordIndex = 0;
+let roundStart = 0;
+let score = 0;
+let selectedLetters = [];
+let drawings = []; // array of { word, image } objects
+let isListening = false;
+let recognition = null;
+let incorrectAttempts = 0;
+
+// Drawing state
+let drawColor = '#ffa8a8';
+let brushSize = 10;
+let isDrawing = false;
+let isErasing = false;
+let currentDrawWord = null;
+
+// loading screen
+(function () {
+  const FLOWER_COUNT = 5;
+  const container = document.getElementById('loading-flowers');
+  for (let i = 0; i < FLOWER_COUNT; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'loading-flower-slot';
+    slot.innerHTML = '<img src="images/loading-flower.png" alt="">';
+    container.appendChild(slot);
+  }
+  const slots = container.querySelectorAll('.loading-flower-slot');
+  let idx = 0;
+  const interval = setInterval(() => {
+    if (idx < slots.length) {
+      slots[idx++].classList.add('visible');
+    } else {
+      clearInterval(interval);
+    }
+  }, 800); // 5 flowers × 800 ms ≈ 4 s
+})();
+
+setTimeout(() => {
+  const loadingEl = document.getElementById('loading-screen');
+  loadingEl.classList.add('pulling-down');
+  loadingEl.addEventListener('animationend', () => {
+    loadingEl.classList.remove('active');
+    const homeEl = document.getElementById('home-screen');
+    homeEl.classList.add('active', 'entering');
+    homeEl.addEventListener('animationend', () => homeEl.classList.remove('entering'), { once: true });
+    loadWord();
+  }, { once: true });
+}, 5000);
+
+
+//add a TTS fallback
+
+const USE_CUSTOM_AUDIO = false; //set to true when custom audio done 
+const AUDIO_BASE = './audio';
+
+function playLetterSound(letter) {
+  if (USE_CUSTOM_AUDIO) {
+    const audio = new Audio(`${AUDIO_BASE}/letters/${letter}.mp3`);
+    audio.play().catch(() => speakTTS(PHONICS[letter] || letter));
+  } else {
+    speakTTS(PHONICS[letter] || letter, 0.8);
+  }
+}
+
+function playWordSound(word) {
+  if (USE_CUSTOM_AUDIO) {
+    const audio = new Audio(`${AUDIO_BASE}/words/${word}.mp3`);
+    audio.play().catch(() => speakTTS(word));
+  } else {
+    speakTTS(word, 0.7);
+  }
+}
+
+function playBlend(letters) {
+  const blend = letters.join('');
+  speakTTS(blend, 0.9);
+}
+
+//TTS FALLBACK (=false if custom audio ready)
+function speakTTS(text, rate = 1.0) {
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = rate;
+    utter.pitch = 1.1;
+    utter.volume = 1;
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Google'));
+    if (preferred) utter.voice = preferred;
+    window.speechSynthesis.speak(utter);
+  }
+}
+
+if ('speechSynthesis' in window) {
+  speechSynthesis.getVoices();
+  speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+}
+
+function loadWord() {
+  const wordData = WORDS[currentWordIndex];
+  const container = document.getElementById('tiles-container');
+  const illustration = document.getElementById('illustration');
+
+  selectedLetters = [];
+  incorrectAttempts = 0;
+  container.innerHTML = '';
+
+// create tiles
+  wordData.word.split('').forEach((letter, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'letter-tile';
+    tile.textContent = letter.toLowerCase();
+    tile.innerHTML = `${letter.toLowerCase()}<span class="tile-number">${i + 1}</span>`;
+    tile.addEventListener('click', () => onTileClick(tile, letter, i));
+    container.appendChild(tile);
+  });
+
+  // illustration
+  illustration.innerHTML = `<img src="${wordData.image}" alt="${wordData.word}" class="illustration-img">`;
+
+  // status update
+  document.getElementById('words-left').textContent = (roundStart + ROUND_SIZE) - currentWordIndex;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+}
+
+function onTileClick(tile, letter, index) {
+
+  if (tile.classList.contains('played') || tile.classList.contains('selected')) {
+    playLetterSound(letter);
+    return;
+  }
+
+  // check if this is the next expected letter
+  const expectedIndex = selectedLetters.length;
+  if (index !== expectedIndex) {
+    tile.style.animation = 'none';
+    tile.offsetHeight; // reflow
+    tile.style.animation = '';
+    setFeedback(`Tap letter ${expectedIndex + 1} first!`, 'info');
+    return;
+  }
+
+  // Select  tile
+  selectedLetters.push(letter);
+  tile.classList.add('selected');
+
+  // Play letter sound
+  playLetterSound(letter);
+
+  const word = WORDS[currentWordIndex].word;
+  setTimeout(() => {
+    // Mark as played
+    tile.classList.remove('selected');
+    tile.classList.add('played');
+
+    // If all letters selected, play the full word
+    if (selectedLetters.length === word.length) {
+      setTimeout(() => {
+        playWordSound(word);
+        setFeedback('say the word!', 'info');
+      }, 300);
+    }
+  }, 350);
+}
+
+function playFullWord() {
+  const word = WORDS[currentWordIndex].word;
+  playWordSound(word);
+}
+
+function setFeedback(text, type) {
+  const fb = document.getElementById('feedback');
+  fb.textContent = text;
+  fb.className = `feedback ${type}`;
+}
+
+//speech recognition logic
+function startListening() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    setFeedback('speech recognition not supported! (use chrome)', 'incorrect');
+    return;
+  }
+
+  const micBtn = document.getElementById('mic-btn');
+
+  if (isListening) {
+    recognition.stop();
+    return;
+  }
+
+  recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.continuous = false;
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 5;
+
+  recognition.onstart = () => {
+    isListening = true;
+    micBtn.classList.add('listening');
+    setFeedback('say the word!', 'info');
+  };
+
+  recognition.onresult = (event) => {
+    const targetWord = WORDS[currentWordIndex].word.toLowerCase();
+    let matched = false;
+
+    // Check all alternatives
+    for (let i = 0; i < event.results[0].length; i++) {
+      const heard = event.results[0][i].transcript.trim().toLowerCase();
+      if (heard === targetWord || heard.includes(targetWord)) {
+        matched = true;
+        break;
+      }
+    }
+
+    if (matched) {
+      onCorrectAnswer();
+    } else {
+      incorrectAttempts++;
+      if (incorrectAttempts >= 3) {
+        setFeedback(`it's okay! keep trying!`, 'info');
+        setTimeout(() => pushWordToEnd(), 1500);
+      } else {
+        setFeedback(`Try again!`, 'incorrect');
+        const tryAgainSound = document.getElementById('tryagain-sound');
+        tryAgainSound.currentTime = 0;
+        tryAgainSound.play().catch(() => {});
+        setTimeout(() => playWordSound(targetWord), 1000);
+      }
+    }
+  };
+
+  recognition.onerror = (event) => {
+    if (event.error === 'no-speech') {
+      setFeedback("try again!", 'incorrect');
+    } else {
+      setFeedback('could you say that a little bit louder? :)', 'incorrect');
+    }
+  };
+
+  recognition.onend = () => {
+    isListening = false;
+    micBtn.classList.remove('listening');
+  };
+
+  recognition.start();
+}
+
+// game logic
+function onCorrectAnswer() {
+  score++;
+
+  const correctSound = document.getElementById('correct-sound');
+  correctSound.volume = 0.6;
+  correctSound.currentTime = 0;
+  correctSound.play().catch(() => {});
+
+  setFeedback('Yay! You got it!');
+
+  // check if 5 correct
+  const earnedReward = score % 5 === 0;
+
+  setTimeout(() => {
+    if (earnedReward) {
+      showRewardScreen();
+    } else {
+      nextWord();
+    }
+  }, 1500);
+}
+
+function nextWord() {
+  currentWordIndex++;
+
+  if (currentWordIndex >= roundStart + ROUND_SIZE) {
+    showCompleteScreen();
+    return;
+  }
+
+  loadWord();
+}
+
+function pushWordToEnd() {
+  const skipped = WORDS.splice(currentWordIndex, 1)[0];
+  // Insert at the last slot of the current round so it comes back before the round ends
+  WORDS.splice(roundStart + ROUND_SIZE - 1, 0, skipped);
+  loadWord();
+}
+
+function showRewardScreen() {
+  const learnedCount = currentWordIndex + 1;
+  const drawnWords = new Set(drawings.map(d => d.word));
+  const undrawn = WORDS.slice(0, learnedCount).filter(w => !drawnWords.has(w.word));
+  const pool = undrawn.length > 0 ? undrawn : WORDS.slice(0, learnedCount);
+  currentDrawWord = pool[Math.floor(Math.random() * pool.length)];
+
+  document.getElementById('draw-word-label').textContent = currentDrawWord.word.toUpperCase();
+  document.getElementById('draw-reference-img').src = currentDrawWord.image;
+  document.getElementById('draw-reference-img').alt = currentDrawWord.word;
+
+  document.getElementById('home-screen').classList.remove('active');
+  document.getElementById('reward-screen').classList.add('active');
+  initCanvas();
+}
+
+function showCompleteScreen() {
+  document.getElementById('home-screen').classList.remove('active');
+  document.getElementById('complete-screen').classList.add('active');
+
+  const drawingImg = document.getElementById('complete-drawing-img');
+  if (drawings.length > 0) {
+    drawingImg.src = drawings[drawings.length - 1].image;
+    drawingImg.style.display = 'block';
+  } else {
+    drawingImg.style.display = 'none';
+  }
+}
+
+function restartGame() {
+  roundStart = (roundStart + ROUND_SIZE) % WORDS.length;
+  currentWordIndex = roundStart;
+  score = 0;
+  document.getElementById('complete-screen').classList.remove('active');
+  document.getElementById('home-screen').classList.add('active');
+  loadWord();
+}
+
+//drawing canvas 
+function initCanvas() {
+  const canvas = document.getElementById('draw-canvas');
+  const ctx = canvas.getContext('2d');
+
+  // Remove old listeners by replacing node
+  const newCanvas = canvas.cloneNode(true);
+  canvas.parentNode.replaceChild(newCanvas, canvas);
+
+  const c = document.getElementById('draw-canvas');
+  const context = c.getContext('2d');
+
+  // Mouse events
+  c.addEventListener('mousedown', (e) => startDraw(e, context, c));
+  c.addEventListener('mousemove', (e) => draw(e, context, c));
+  c.addEventListener('mouseup', () => stopDraw());
+  c.addEventListener('mouseleave', () => stopDraw());
+
+  // Touch events
+  c.addEventListener('touchstart', (e) => { e.preventDefault(); startDraw(e.touches[0], context, c); });
+  c.addEventListener('touchmove', (e) => { e.preventDefault(); draw(e.touches[0], context, c); });
+  c.addEventListener('touchend', () => stopDraw());
+}
+
+function startDraw(e, ctx, canvas) {
+  isDrawing = true;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+}
+
+function draw(e, ctx, canvas) {
+  if (!isDrawing) return;
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const y = (e.clientY - rect.top) * (canvas.height / rect.height);
+  ctx.lineWidth = isErasing ? brushSize * 2 : brushSize;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.globalCompositeOperation = isErasing ? 'destination-out' : 'source-over';
+  ctx.strokeStyle = isErasing ? 'rgba(0,0,0,1)' : drawColor;
+  ctx.lineTo(x, y);
+  ctx.stroke();
+}
+
+function stopDraw() {
+  isDrawing = false;
+  const canvas = document.getElementById('draw-canvas');
+  if (canvas) canvas.getContext('2d').globalCompositeOperation = 'source-over';
+}
+
+function setColor(color, btn) {
+  isErasing = false;
+  document.getElementById('eraser-btn').classList.remove('active');
+  drawColor = color;
+  document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function toggleEraser(btn) {
+  isErasing = !isErasing;
+  btn.classList.toggle('active', isErasing);
+  if (isErasing) {
+    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
+  }
+}
+
+function setBrushSize(size) {
+  brushSize = size;
+}
+
+function clearCanvas() {
+  const canvas = document.getElementById('draw-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+
+function saveDrawing() {
+  const canvas = document.getElementById('draw-canvas');
+  const imageData = canvas.toDataURL('image/png');
+  drawings.push({ word: currentDrawWord.word, image: imageData });
+  document.getElementById('drawing-count').textContent = drawings.length;
+
+  document.getElementById('reward-screen').classList.remove('active');
+  document.getElementById('home-screen').classList.add('active');
+  nextWord();
+}
+
+//inventory
+function openInventory() {
+  const gallery = document.getElementById('inventory-gallery');
+  gallery.innerHTML = '';
+
+  if (drawings.length === 0) {
+    gallery.innerHTML = '<div class="empty-inventory">Oops! No drawings yet!<br>Get 5 words correct to earn one! You can do it!</div>';
+  } else {
+    drawings.forEach((drawing) => {
+      const item = document.createElement('div');
+      item.className = 'inventory-item';
+
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'gallery-item-canvas';
+      const img = document.createElement('img');
+      img.src = drawing.image;
+      img.alt = drawing.word;
+      imgWrap.appendChild(img);
+
+      const label = document.createElement('div');
+      label.className = 'gallery-item-label';
+      label.textContent = drawing.word;
+
+      item.appendChild(imgWrap);
+      item.appendChild(label);
+      gallery.appendChild(item);
+    });
+  }
+
+  document.getElementById('inventory-modal').classList.add('active');
+}
+
+function closeInventory() {
+  document.getElementById('inventory-modal').classList.remove('active');
+}
+
+// Close modal on overlay click
+document.getElementById('inventory-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeInventory();
+});
+
+document.getElementById('btn-open-inventory').addEventListener('click', openInventory);
+document.getElementById('btn-open-inventory-complete').addEventListener('click', openInventory);
+
+</script>
+</body>
+</html>
